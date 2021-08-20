@@ -1,4 +1,5 @@
 import {useDispatch, useSelector} from "react-redux";
+import {Link, NavLink} from "react-router-dom";
 
 function App() {
     const store = useSelector(store => store)
@@ -8,8 +9,12 @@ function App() {
 
   return (
     <div className="App">
-      saga
-        <button onClick={() => dispatch({type:'LOAD_DATA'})}>click me</button>
+      Saga
+        <div>
+            <Link to={'/blog'}>
+                Open blog
+            </Link>
+        </div>
     </div>
   );
 }

@@ -18,7 +18,11 @@
 // select - получить данные из store, аналог useSelect/mapStateToProps
 // cancel - отменяет задачу
 // yield fork - создает объект с методами и свойствами, которые создает сага
-import {take, takeEvery, takeLatest, takeLeading,put,call, fork, spawn, join, select} from 'redux-saga/effects'
+// all - эффект. Параллельно запускает все таски и ждет их завершения. аналог Promise.all
+// apply - вызывает функцию в контексте первого аргумента
+import {take, takeEvery, takeLatest, takeLeading,put,call, fork, spawn, join, select, delay,all} from 'redux-saga/effects'
+import {loadBasicData} from "./initialSagas";
+import pageLoaderSaga, {loadOnAction} from "./pageLoaderSaga";
 // take(блокирующий) ждет какого либо диспатча экшена в нашем приложении и после того как он происходит, он может выполниться
 
 async function swapiGet(pattern) {
@@ -32,7 +36,28 @@ const wait = (t) => new Promise((resolve => {
     setTimeout(resolve,t)
 }))
 
-function* loadPeople() {
+
+
+export default function* rootSaga() {
+    const sagas = [loadBasicData, pageLoaderSaga, loadOnAction]
+
+    const retrySagas = yield sagas.map(saga => {
+        return spawn(function* () {
+            while (true){
+                try {
+                    yield call(saga)
+                    break
+                } catch(e) {
+                    console.log(e)
+                }
+            }
+
+        })
+    })
+    yield all(retrySagas)
+}
+
+/*function* loadPeople() {
     const people = yield call(swapiGet, 'people')
     yield put({type:'SET_PEOPLE', payload: people.results})
     console.log('load people')
@@ -42,8 +67,9 @@ function* loadPlanets() {
     const planets = yield call(swapiGet, 'planets')
     yield put({type:'SET_PLANETS', payload: planets.results})
     console.log('load planets')
-}
+}*/
 
+/*
 export function* workerSaga() {
     console.log('run parallels tasks')
     // const task = yield fork(loadPeople)
@@ -55,18 +81,14 @@ export function* workerSaga() {
     console.log('finish parallels tasks', store)
 
 }
+*/
 
 //  Следит за dispatch'em экшена в приложении и запускает worker
-export function* watchLoadDataSaga() {
-    // while(true){
-    //     yield take('CLICK')
-    //
-    //     yield workerSaga()
-    // }
-    yield takeEvery('LOAD_DATA', workerSaga)
-}
-
-
-export default function* rootSaga() {
-    yield fork(watchLoadDataSaga)
-}
+// export function* watchLoadDataSaga() {
+//     // while(true){
+//     //     yield take('CLICK')
+//     //
+//     //     yield workerSaga()
+//     // }
+//     yield takeEvery('LOAD_DATA', workerSaga)
+// }
